@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -52,24 +52,64 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float inputX = Input.GetAxisRaw("Horizontal");
-        float inputY = Input.GetAxisRaw("Vertical");
-        playerMoveDirection = new Vector3(inputX, inputY).normalized;
+        Vector2 dir = Vector2.zero;
 
-        if (playerMoveDirection == Vector3.zero){
-            animator.SetBool("moving", false);
-        } else if (Time.timeScale != 0) {
-            animator.SetBool("moving", true);
-            animator.SetFloat("moveX", inputX);
-            animator.SetFloat("moveY", inputY);
-            lastMoveDirection = playerMoveDirection;
+        // --- MOBILE: Joystick varsa və input verirsə ---
+        if (JoystickExistsAndHasInput(out Vector2 joyDir))
+        {
+            dir = joyDir;
+        }
+        else
+        {
+            // --- PC: Mouse-a doğru get ---
+            Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mouseWorld.z = 0;
+            if(Vector3.Distance(transform.position,mouseWorld)>1)
+            {
+                dir = (mouseWorld - transform.position).normalized;
+            }
+           
         }
 
-        if (immunityTimer > 0){
+        playerMoveDirection = dir;
+
+        // ANIMATIONS
+        if (playerMoveDirection == Vector3.zero)
+        {
+            animator.SetBool("moving", false);
+        }
+        else if (Time.timeScale != 0)
+        {
+            animator.SetBool("moving", true);
+            animator.SetFloat("moveX", dir.x);
+            animator.SetFloat("moveY", dir.y);
+            lastMoveDirection = dir;
+        }
+
+        // IMMUNITY
+        if (immunityTimer > 0)
+        {
             immunityTimer -= Time.deltaTime;
-        } else {
+        }
+        else
+        {
             isImmune = false;
         }
+    }
+    private bool JoystickExistsAndHasInput(out Vector2 dir)
+    {
+        dir = Vector2.zero;
+
+        //if (PlayerInputRouter.Instance == null)
+        //    return false;
+
+        //var j = PlayerInputRouter.Instance.joystick;
+        //if (j == null)
+        //    return false;
+
+        //dir = j.Direction;
+        return false;
+        return dir.magnitude > 0.1f;
     }
 
     void FixedUpdate(){
